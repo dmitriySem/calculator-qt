@@ -80,4 +80,6 @@ private:
 
 };
 
+
+
 #endif // CALCULATOR_H

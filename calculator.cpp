@@ -5,6 +5,7 @@
 #include <QFont>
 #include <QDebug>
 #include <QToolButton>
+#include <QtMath>
 
 Calculator::Calculator(){
 
@@ -15,6 +16,8 @@ Calculator::Calculator(){
 
     m_display_up->setReadOnly(true);
     m_display_down->setReadOnly(true);
+    m_display_down->setText("0");
+    m_display_up->setText("0");
 
     m_display_up->setAlignment(Qt::AlignRight);
     m_display_down->setAlignment(Qt::AlignRight);
@@ -97,22 +100,55 @@ Calculator::Calculator(){
 
 void Calculator::digitClicked()
 {
-
+    Button* btn = (Button*) sender();
+    int digit = btn->text().toUInt();
+    if (m_display_down->text() == "0") {
+        m_display_down->clear();
+        m_display_up->clear();
+    }
+    m_display_down->setText(m_display_down->text() + QString::number(digit));
+    qDebug() << "digit " << digit;
 }
 
 void Calculator::unaryOperatorClicked()
 {
+    Button* btn = (Button*) sender();
+    QString operation = btn->text();
 
+    double operand = m_display_down->text().toDouble();
+    double result = 0.0;
+
+    if (operation == m_squareRoot_sign) {
+        if (operand < 0.0) {
+            abortOperation();
+            return;
+        }
+        result = std::sqrt(operand);
+    }
+    if (operation == m_power_sign) {
+        result = std::pow(operand, 2.0);
+    }
+    if (operation == m_reciprocal_sign) {
+        if (operand == 0.0) {
+            abortOperation();
+            return;
+        }
+        result = 1 / operand;
+    }
+
+    m_display_down->setText(QString::number(result));
 }
 
 void Calculator::doubleOperandClicked()
 {
+    Button* btn = (Button*) sender();
+    QString operation = btn->text();
 
 }
 
 void Calculator::equalClicked()
 {
-
+    m_display_up->setText( m_display_down->text());
 }
 
 void Calculator::pointClicked()
@@ -122,22 +158,34 @@ void Calculator::pointClicked()
 
 void Calculator::changeSignClicked()
 {
-
+    QString text = m_display_down->text();
+    double val = text.toDouble();
+    if (val > 0.0)
+        text.prepend("-");
+     else if (val < 0.0)
+        text.remove(0, 1);
+    m_display_down->setText(text);
 }
 
 void Calculator::backspaceClicked()
 {
+    QString text = m_display_down->text();
+    text.chop(1);
+    if (text.isEmpty())
+        text = "0";
 
+     m_display_down->setText(text);
 }
 
 void Calculator::clear()
 {
-
+    m_display_down->setText("0");
 }
 
 void Calculator::clearAll()
 {
-
+    m_display_up->clear();
+    m_display_down->setText("0");
 }
 
 void Calculator::clearMemory()
@@ -166,4 +214,10 @@ Button *Calculator::createButton(const QString &text, const char *member)
     Button* btn = new Button(text);
     connect(btn, SIGNAL(clicked()), this, member); // this этот класс обрабатывает
     return btn;
+}
+
+void Calculator::abortOperation()
+{
+    m_display_up->setText("###");
+    m_display_down->setText("###");
 }

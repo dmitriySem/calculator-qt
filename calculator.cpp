@@ -18,15 +18,18 @@ Calculator::Calculator(){
     m_display_down->setReadOnly(true);
     m_display_down->setText("0");
     m_display_up->setText("0");
+    m_sum_in_memmory = 0.0;
 
     m_display_up->setAlignment(Qt::AlignRight);
     m_display_down->setAlignment(Qt::AlignRight);
+    m_sign->setAlignment(Qt::AlignRight);
 
     m_display_up->setMaxLength(15);
     m_display_down->setMaxLength(15);
 
     m_display_up->setFont(QFont("Times",13,-1,false));
     m_display_down->setFont(QFont("Times",13,-1,false));
+    m_sign->setFont(QFont("Times",15,-1,false));
 
     for (int i = 0; i < 10; ++i)
         m_digitButtons[i] = createButton(QString::number(i), SLOT(digitClicked()));
@@ -38,10 +41,12 @@ Calculator::Calculator(){
     clearButton = createButton("Clear", SLOT(clear()));
     clearAllButton = createButton("ClearAll", SLOT(clearAll()));
 
+
     clearMemoryButton = createButton("MC", SLOT(clearMemory()));
     readMemoryButton = createButton("MR", SLOT(readMemory()));
     setMemoryButton = createButton("M+", SLOT(addToMemory()));
     addToMemoryButton = createButton("M-", SLOT(minToMemory()));
+
 
     divisionButton = createButton(m_division_sign, SLOT(doubleOperandClicked()));
     timesButton = createButton(m_times_sign, SLOT(doubleOperandClicked()));
@@ -58,16 +63,16 @@ Calculator::Calculator(){
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
 
-    mainLayout->addWidget(m_digitButtons[1], 4, 1);
-    mainLayout->addWidget(m_digitButtons[2], 4, 2);
-    mainLayout->addWidget(m_digitButtons[3], 4, 3);
-    mainLayout->addWidget(m_digitButtons[4], 5, 1);
-    mainLayout->addWidget(m_digitButtons[5], 5, 2);
-    mainLayout->addWidget(m_digitButtons[6], 5, 3);
-    mainLayout->addWidget(m_digitButtons[7], 6, 1);
-    mainLayout->addWidget(m_digitButtons[8], 6, 2);
-    mainLayout->addWidget(m_digitButtons[9], 6, 3);
-    mainLayout->addWidget(m_digitButtons[0], 7, 1);
+    mainLayout->addWidget(m_digitButtons[1], 4, 1, 1, 1);
+    mainLayout->addWidget(m_digitButtons[2], 4, 2, 1, 1);
+    mainLayout->addWidget(m_digitButtons[3], 4, 3, 1, 1);
+    mainLayout->addWidget(m_digitButtons[4], 5, 1, 1, 1);
+    mainLayout->addWidget(m_digitButtons[5], 5, 2, 1, 1);
+    mainLayout->addWidget(m_digitButtons[6], 5, 3, 1, 1);
+    mainLayout->addWidget(m_digitButtons[7], 6, 1, 1, 1);
+    mainLayout->addWidget(m_digitButtons[8], 6, 2, 1, 1);
+    mainLayout->addWidget(m_digitButtons[9], 6, 3, 1, 1);
+    mainLayout->addWidget(m_digitButtons[0], 7, 1, 1, 1);
 
     mainLayout->addWidget(m_display_up, 0, 0, 1, 6);
     mainLayout->addWidget(m_sign, 1, 5, 1, 1);
@@ -80,6 +85,7 @@ Calculator::Calculator(){
     mainLayout->addWidget(readMemoryButton, 5, 0);
     mainLayout->addWidget(setMemoryButton, 6, 0);
     mainLayout->addWidget(addToMemoryButton, 7, 0);
+
     mainLayout->addWidget(pointButton, 7, 2);
     mainLayout->addWidget(changeSignButton, 7, 3);
 
@@ -107,7 +113,7 @@ void Calculator::digitClicked()
         m_display_up->clear();
     }
     m_display_down->setText(m_display_down->text() + QString::number(digit));
-    qDebug() << "digit " << digit;
+    //qDebug() << "digit " << digit;
 }
 
 void Calculator::unaryOperatorClicked()
@@ -144,16 +150,50 @@ void Calculator::doubleOperandClicked()
     Button* btn = (Button*) sender();
     QString operation = btn->text();
 
+    double operand = m_display_down->text().toDouble();
+
+    if (m_display_down->text() == "0")
+        return;
+
+    m_sign->setText(operation);
+
+    if (m_display_down->text() == "")
+        return;
+
+    m_display_down->clear();
+
+    if (!m_pending_operation.isEmpty()) {
+        if (!calculate(operand, m_pending_operation)) {
+            abortOperation();
+            return;
+        }
+        m_pending_operation.clear();
+    } else {
+        m_display_up->setText(QString::number(operand));
+    }
+    m_pending_operation = operation;
 }
 
 void Calculator::equalClicked()
 {
-    m_display_up->setText( m_display_down->text());
+    double operand = m_display_down->text().toDouble();
+    if (!m_pending_operation.isEmpty()) {
+        if (!calculate(operand, m_pending_operation)) {
+            abortOperation();
+            return;
+        }
+        m_pending_operation.clear();
+    }
+    m_display_down->setText( m_display_up->text());
+    m_display_up->clear();
+    m_sign->clear();
 }
 
 void Calculator::pointClicked()
 {
-
+    if (!m_display_down->text().contains(".")) {
+        m_display_down->setText(m_display_down->text() + ".");
+    }
 }
 
 void Calculator::changeSignClicked()
@@ -190,22 +230,30 @@ void Calculator::clearAll()
 
 void Calculator::clearMemory()
 {
-
+    qDebug() << "memmory: " << m_sum_in_memmory;
+    m_sum_in_memmory = 0.0;
 }
 
 void Calculator::readMemory()
 {
-
+    m_display_up->clear();
+    m_sign->clear();
+    m_display_down->setText(QString::number(m_sum_in_memmory));
+    qDebug() << "memmory: " << m_sum_in_memmory;
 }
 
 void Calculator::addToMemory()
 {
-
+    //equalClicked();
+    m_sum_in_memmory += m_display_down->text().toDouble();
+    qDebug() << "memmory: " << m_sum_in_memmory;
 }
 
 void Calculator::minToMemory()
 {
-
+    //equalClicked();
+    m_sum_in_memmory -= m_display_down->text().toDouble();
+    qDebug() << "memmory: " << m_sum_in_memmory;
 }
 
 
@@ -220,4 +268,24 @@ void Calculator::abortOperation()
 {
     m_display_up->setText("###");
     m_display_down->setText("###");
+}
+
+bool Calculator::calculate(double operand, const QString &operation)
+{
+    double temp_total = m_display_up->text().toDouble();
+
+    if (operation == m_plus_sign) {
+        temp_total += operand;
+    } else if (operation == m_minus_sign) {
+        temp_total -= operand;
+    } else if (operation == m_times_sign) {
+        temp_total *= operand;
+    } else if (operation == m_division_sign) {
+        if (operand == 0.0) {
+            return false;
+        }
+        temp_total /= operand;
+    }
+    m_display_up->setText(QString::number(temp_total));
+    return true;
 }

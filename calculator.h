@@ -34,6 +34,7 @@ private slots:
 private:
    Button* createButton(const QString& text, const char* member);
    void abortOperation();
+   bool calculate(double operand, const QString& operation);
 
    double m_sum_in_memmory;
 

@@ -13,6 +13,7 @@ class Calculator : public QWidget
 
 public:
     Calculator();
+    ~Calculator();
 
 private slots:
     void digitClicked();

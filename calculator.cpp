@@ -104,6 +104,11 @@ Calculator::Calculator(){
     setWindowTitle("Calculator");
 }
 
+Calculator::~Calculator()
+{
+
+}
+
 void Calculator::digitClicked()
 {
     Button* btn = (Button*) sender();
